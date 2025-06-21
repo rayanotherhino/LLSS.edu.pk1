@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LLSS - Little Leader School System</title>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHam8578513OhTemzxRc-BroP9wkqfweg",
+      authDomain: "llss1-25e3a.firebaseapp.com",
+      projectId: "llss1-25e3a",
+      storageBucket: "llss1-25e3a.firebasestorage.app",
+      messagingSenderId: "447891964910",
+      appId: "1:447891964910:web:135ed7314ba5b604a704ff",
+      measurementId: "G-3386Z22VSC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const ADMIN_EMAIL = "rayankhan5926@gmail.com";
+
+    // Sign in
+    document.getElementById("signInForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("signin-email").value.trim();
+      const password = document.getElementById("signin-password").value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("Signed in successfully!");
+      } catch (error) {
+        alert("Login failed: " + error.message);
+      }
+    });
+
+    // Sign up
+    document.getElementById("signUpForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("Account created and signed in!");
+      } catch (error) {
+        alert("Signup failed: " + error.message);
+      }
+    });
+
+    // Admission form submission
+    document.getElementById("admission-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const student_name = e.target.student_name.value.trim();
+      const parent_email = e.target.parent_email.value.trim();
+      const parent_phone = e.target.parent_phone.value.trim();
+
+      try {
+        await addDoc(collection(db, "applications"), {
+          student_name,
+          parent_email,
+          parent_phone,
+          timestamp: new Date()
+        });
+        alert("Application submitted!");
+        e.target.reset();
+      } catch (error) {
+        alert("Failed to submit: " + error.message);
+      }
+    });
+
+    // Auth state change
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("mainSite").style.display = "block";
+
+        // If admin, enable application view
+        if (user.email === ADMIN_EMAIL) {
+          document.getElementById("applicationsNav").classList.remove("hidden");
+
+          document.querySelector('a[href="#applications"]').addEventListener("click", async () => {
+            const appList = document.getElementById("applicationList");
+            appList.innerHTML = "";
+            const querySnapshot = await getDocs(collection(db, "applications"));
+
+            if (querySnapshot.empty) {
+              appList.innerHTML = "<p>No applications submitted yet.</p>";
+            } else {
+              querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const div = document.createElement("div");
+                div.style.border = "1px solid #ccc";
+                div.style.padding = "10px";
+                div.style.margin = "10px 0";
+                div.innerHTML = `
+                  <strong>Student Name:</strong> ${data.student_name}<br>
+                  <strong>Parent Email:</strong> ${data.parent_email}<br>
+                  <strong>Parent Phone:</strong> ${data.parent_phone}
+                `;
+                appList.appendChild(div);
+              });
+            }
+
+            document.getElementById("applications").classList.remove("hidden");
+          });
+        }
+      }
+    });
+  </script>
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    .hidden { display: none; }
+    .navbar { background-color: #004080; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    .nav-links { list-style: none; display: flex; gap: 1rem; }
+    .nav-links li a { color: white; text-decoration: none; }
+    .hero, section { padding: 2rem; text-align: center; }
+    form input, form button { padding: 10px; margin: 5px; }
+    footer { text-align: center; background-color: #004080; color: white; padding: 1rem; }
+    .gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
+    .gallery div { text-align: center; }
+    .gallery img { width: 300px; height: 200px; object-fit: cover; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .login-container { height: 100vh; display: flex; justify-content: center; align-items: center; background: #f0f4f8; }
+    .form-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); width: 300px; text-align: center; }
+    .form-box input, .form-box button { width: 100%; padding: 10px; margin: 10px 0; }
+    .form-box button { background-color: #004080; color: white; border: none; }
+    .container { display: flex; justify-content: space-around; gap: 30px; max-width: 900px; margin: 0 auto; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input[type="email"], input[type="password"] { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    button { width: 100%; padding: 10px; border: none; background-color: #4CAF50; color: white; font-size: 16px; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+    @media (max-width: 650px) { .container { flex-direction: column; align-items: center; } }
+  </style>
+</head>
+
+<body>
+  <div id="loginPage" class="login-container">
+    <div class="container">
+      <div class="form-box">
+        <h2>Sign In</h2>
+        <form id="signInForm">
+          <label for="signin-email">Email:</label>
+          <input type="email" id="signin-email" required>
+          <label for="signin-password">Password:</label>
+          <input type="password" id="signin-password" required>
+          <button type="submit">Sign In</button>
+        </form>
+      </div>
+      <div class="form-box">
+        <h2>Create Account</h2>
+        <form id="signUpForm">
+          <label for="signup-email">Email:</label>
+          <input type="email" id="signup-email" required>
+          <label for="signup-password">Password:</label>
+          <input type="password" id="signup-password" required>
+          <button type="submit">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="mainSite" class="hidden">
+    <header class="navbar">
+      <div class="logo">LLSS</div>
+      <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#academics">Academics</a></li>
+        <li><a href="#admissions">Admissions</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li id="applicationsNav" class="hidden"><a href="#applications">Applications</a></li>
+      </ul>
+    </header>
+
+    <section id="home" class="hero">
+      <h2>Welcome to Little Leader School System</h2>
+      <p>Empowering the future, one leader at a time with dedication, discipline, and creativity.</p>
+    </section>
+
+    <section id="about">
+      <h2>About Us</h2>
+      <p>We believe in learning through activities! LLSS uses interactive methods to teach concepts in a way that’s fun and effective for students.</p>
+      <div class="gallery">
+        <div><h3>Art Activity</h3><img src="art_activity.jpg" alt="Art Activity" /></div>
+        <div><h3>Science Experiment</h3><img src="science_experiment.jpg" alt="Science Experiment" /></div>
+        <div><h3>Outdoor Games</h3><img src="outdoor_games.jpg" alt="Outdoor Games" /></div>
+        <div><h3>Group Project</h3><img src="group_project.jpg" alt="Group Project" /></div>
+      </div>
+      <p>Activity-based learning boosts engagement, retention, and leadership in every classroom!</p>
+    </section>
+
+    <section id="academics">
+      <h2>Academics</h2>
+      <p>LLSS provides education from Playgroup to Grade 8. We focus on core academics, character-building, and modern teaching strategies.</p>
+    </section>
+
+    <section id="admissions">
+      <h2>Admissions</h2>
+      <p>We are currently enrolling students. Entrance fee is <strong>PKR 5000</strong> and monthly tuition starts at <strong>PKR 5000</strong>.</p>
+      <form id="admission-form">
+        <input type="text" name="student_name" placeholder="Student Name" required />
+        <input type="email" name="parent_email" placeholder="Parent Email" required />
+        <input type="text" name="parent_phone" placeholder="Parent Phone" required />
+        <button type="submit">Apply Now</button>
+      </form>
+    </section>
+
+    <section id="applications" class="hidden">
+      <h2>Submitted Applications</h2>
+      <div id="applicationList"></div>
+    </section>
+
+    <section id="contact">
+      <h2>Contact Us</h2>
+      <p>Email: info@llss.edu.pk</p>
+      <p>Phone: 0123-456789</p>
+    </section>
+
+    <footer>
+      <p>&copy; 2025 Little Leader School System</p>
+    </footer>
+  </div>
+</body>
+</html>
